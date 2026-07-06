@@ -1,6 +1,7 @@
 ---
 name: news-html-digest
-description: Fetch Chinese and tech/finance news plus a gold price trend card, then generate a readable HTML digest named with Beijing time. Use when the user says "【新闻】", asks for a Codex-platform news skill, or requests a HTML news report from 黄金金价查询, 60 秒每日要闻, 微博热搜, 知乎热榜, 抖音热搜, 腾讯新闻科技, 澎湃新闻, 东方财富股票新闻, Bilibili, IT之家, 少数派, 掘金, 百度, 头条, Hacker News, 参考消息, Solidot, or 财联社.
+description: >-
+  生成北京时间 HTML 新闻日报的 Codex skill：抓取黄金金价、中文热榜、科技/财经/开发者新闻，输出可读 HTML 报告和页面长截图。默认用于用户说「【新闻】」、请求最新新闻日报，或需要来自黄金金价查询、60 秒每日要闻、微博热搜、知乎热榜、抖音热搜、腾讯新闻科技、澎湃新闻、东方财富股票新闻、Bilibili、IT之家、少数派、掘金、百度、头条、Hacker News、参考消息、Solidot、财联社的 HTML 新闻报告。English: Fetch Chinese and tech/finance news plus a gold price trend card, then generate a readable HTML digest named with Beijing time. Use when the user says "【新闻】", asks for a Codex-platform news skill, or requests a HTML news report from 黄金金价查询, 60 秒每日要闻, 微博热搜, 知乎热榜, 抖音热搜, 腾讯新闻科技, 澎湃新闻, 东方财富股票新闻, Bilibili, IT之家, 少数派, 掘金, 百度, 头条, Hacker News, 参考消息, Solidot, or 财联社.
 ---
 
 # News HTML Digest
