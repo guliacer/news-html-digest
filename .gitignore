@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Generated reports/screenshots when testing locally
+*.html
+*.png

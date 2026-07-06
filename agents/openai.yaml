@@ -1,0 +1,4 @@
+interface:
+  display_name: "新闻 HTML 日报"
+  short_description: "抓取多源新闻并生成北京时间HTML日报和长截图"
+  default_prompt: "Use $news-html-digest to fetch the latest news, generate a readable Beijing-time HTML digest, and provide a long screenshot of the page."
