@@ -30,7 +30,7 @@ USER_AGENT = (
 DEFAULT_LIMIT = 20
 DEFAULT_TIMEOUT = 15
 DEFAULT_RETRIES = 2
-DEFAULT_SCREENSHOT_WIDTH = 1200
+DEFAULT_SCREENSHOT_WIDTH = 920
 DEFAULT_SCREENSHOT_HEIGHT = 60000
 DEFAULT_SCREENSHOT_TIMEOUT = 60
 DESKTOP_VIEWPORT_WIDTH = 1200
@@ -1672,7 +1672,7 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width={DESKTOP_VIEWPORT_WIDTH}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>新闻日报 - {escape(generated_display)}</title>
   <style>
     :root {{
@@ -1707,6 +1707,7 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
     }}
 
     * {{ box-sizing: border-box; }}
+    html {{ scroll-behavior: smooth; }}
 
     body {{
       margin: 0;
@@ -1714,13 +1715,26 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       color: var(--text);
       font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
       line-height: 1.6;
+      min-width: 0;
+    }}
+
+    body.view-mobile {{
+      --page-max: 920px;
+    }}
+
+    body.view-pc {{
+      --page-max: 1120px;
       min-width: {DESKTOP_VIEWPORT_WIDTH}px;
     }}
 
     .page {{
-      width: var(--page-max);
+      width: min(var(--page-max), calc(100vw - 32px));
       margin: 0 auto;
       padding: 28px 0 56px;
+    }}
+
+    body.view-pc .page {{
+      width: var(--page-max);
     }}
 
     .report-head {{
@@ -1754,6 +1768,43 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       margin: 8px 0 0;
       color: var(--muted);
       font-size: 15px;
+    }}
+
+    .view-toggle {{
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(76px, 1fr));
+      gap: 4px;
+      align-self: start;
+      justify-self: end;
+      padding: 4px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: #f7faff;
+    }}
+
+    .view-toggle button {{
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      padding: 0 12px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }}
+
+    .view-toggle button[aria-pressed="true"] {{
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(52, 120, 246, 0.22);
+    }}
+
+    .view-toggle button:focus-visible {{
+      outline: 2px solid var(--blue);
+      outline-offset: 2px;
     }}
 
     .metric-strip {{
@@ -1898,7 +1949,7 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       display: grid;
       grid-template-columns: 34px minmax(0, 1fr) 96px;
       gap: 10px;
-      align-items: start;
+      align-items: center;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #fff;
@@ -2073,6 +2124,21 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       border-radius: 8px;
     }}
 
+    .gold-summary-grid {{
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(180px, 1fr);
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 16px;
+    }}
+
+    .gold-primary-panel {{
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }}
+
     .gold-headline {{
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -2102,31 +2168,32 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
     }}
 
     .gold-price-row {{
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: end;
-      margin: 4px 0 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+      margin: 4px 0 0;
     }}
 
     .gold-price-value {{
       display: flex;
       align-items: baseline;
+      flex-wrap: wrap;
       gap: 8px;
       min-width: 0;
       color: #ffcb1e;
     }}
 
     .gold-price-value span {{
-      font-size: 54px;
-      line-height: 0.96;
+      font-size: 48px;
+      line-height: 1;
       font-weight: 950;
       letter-spacing: 0;
     }}
 
     .gold-price-value em {{
       font-style: normal;
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 950;
     }}
 
@@ -2148,13 +2215,17 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
 
     .gold-metrics {{
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: 1fr;
+      grid-auto-rows: minmax(0, 1fr);
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 0;
     }}
 
     .gold-metrics div {{
       min-width: 0;
+      display: grid;
+      align-content: center;
+      min-height: 62px;
       padding: 10px 12px;
       border-radius: 8px;
       border: 1px solid rgba(255, 203, 30, 0.16);
@@ -2290,19 +2361,399 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       outline: none;
     }}
 
+    body.view-mobile .page {{
+      padding-top: 18px;
+      padding-bottom: 44px;
+    }}
+
+    body.view-mobile .report-head {{
+      padding: 20px;
+      margin-bottom: 16px;
+    }}
+
+    body.view-mobile h1 {{
+      font-size: 30px;
+      line-height: 1.2;
+    }}
+
+    body.view-mobile .subhead {{
+      font-size: 15px;
+      line-height: 1.55;
+    }}
+
+    body.view-mobile .metric-strip {{
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }}
+
+    body.view-mobile .metric-tile {{
+      padding: 10px 8px;
+    }}
+
+    body.view-mobile .metric-tile span {{
+      font-size: 11px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }}
+
+    body.view-mobile .metric-tile strong {{
+      font-size: 18px;
+      line-height: 1.18;
+      white-space: nowrap;
+    }}
+
+    body.view-mobile .source-overview {{
+      gap: 9px;
+    }}
+
+    body.view-mobile .source-chip {{
+      min-height: 32px;
+      padding: 5px 10px;
+      font-size: 13px;
+    }}
+
+    body.view-mobile .source-grid {{
+      gap: 16px;
+    }}
+
+    body.view-mobile .source-module:not(.gold-price-module) {{
+      box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
+    }}
+
+    body.view-mobile .module-head,
+    body.view-mobile .compact-module .module-head {{
+      grid-template-columns: 1fr;
+      padding: 16px 18px;
+    }}
+
+    body.view-mobile .module-title,
+    body.view-mobile .compact-module .module-title {{
+      margin-bottom: 7px;
+      font-size: 20px;
+      line-height: 1.32;
+    }}
+
+    body.view-mobile .module-meta,
+    body.view-mobile .compact-module .module-meta {{
+      font-size: 13px;
+      line-height: 1.45;
+    }}
+
+    body.view-mobile .interface-data,
+    body.view-mobile .compact-module .interface-data,
+    body.view-mobile .compact-module .interface-data:not(.compact-split) {{
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px 18px 18px;
+    }}
+
+    body.view-mobile .compact-column {{
+      gap: 8px;
+    }}
+
+    body.view-mobile .data-row,
+    body.view-mobile .compact-module .data-row {{
+      grid-template-columns: 32px minmax(0, 1fr) 72px;
+      gap: 8px;
+      align-items: center;
+      min-height: 58px;
+      padding: 8px 10px;
+    }}
+
+    body.view-mobile .data-row.no-thumb,
+    body.view-mobile .compact-module .data-row.no-thumb {{
+      grid-template-columns: 32px minmax(0, 1fr);
+    }}
+
+    body.view-mobile .row-index,
+    body.view-mobile .compact-module .row-index {{
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      font-size: 13px;
+    }}
+
+    body.view-mobile .row-main,
+    body.view-mobile .compact-module .row-main {{
+      gap: 7px;
+    }}
+
+    body.view-mobile .row-title,
+    body.view-mobile .compact-module .row-title {{
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      font-size: 15px;
+      line-height: 1.42;
+      font-weight: 900;
+      text-overflow: ellipsis;
+    }}
+
+    body.view-mobile .row-image,
+    body.view-mobile .compact-module .row-image {{
+      width: 72px;
+      border-radius: 8px;
+    }}
+
+    body.view-mobile .meta-row,
+    body.view-mobile .compact-module .meta-row {{
+      gap: 6px;
+    }}
+
+    body.view-mobile .meta-pill,
+    body.view-mobile .compact-module .meta-pill {{
+      min-height: 21px;
+      padding: 1px 7px;
+      font-size: 11px;
+    }}
+
+    @media (max-width: 720px) {{
+      body.view-mobile .page {{
+        width: calc(100vw - 24px);
+        padding-top: 12px;
+      }}
+
+      body.view-mobile .title-line {{
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }}
+
+      body.view-mobile .view-toggle {{
+        width: 100%;
+        justify-self: stretch;
+      }}
+
+      body.view-mobile .metric-strip {{
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+      }}
+
+      body.view-mobile .metric-tile {{
+        padding: 8px 6px;
+      }}
+
+      body.view-mobile .metric-tile span {{
+        font-size: 10px;
+      }}
+
+      body.view-mobile .metric-tile strong {{
+        font-size: 16px;
+      }}
+
+      body.view-mobile .source-overview {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }}
+
+      body.view-mobile .source-chip {{
+        display: block;
+        width: 100%;
+        min-width: 0;
+        overflow: hidden;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }}
+
+      body.view-mobile .report-head {{
+        padding: 16px;
+      }}
+
+      body.view-mobile h1 {{
+        font-size: 28px;
+      }}
+
+      body.view-mobile .data-row,
+      body.view-mobile .compact-module .data-row {{
+        grid-template-columns: 28px minmax(0, 1fr) 58px;
+        gap: 7px;
+        min-height: 52px;
+        padding: 7px 8px;
+      }}
+
+      body.view-mobile .data-row.no-thumb,
+      body.view-mobile .compact-module .data-row.no-thumb {{
+        grid-template-columns: 28px minmax(0, 1fr);
+      }}
+
+      body.view-mobile .row-index,
+      body.view-mobile .compact-module .row-index {{
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        font-size: 12px;
+      }}
+
+      body.view-mobile .row-title,
+      body.view-mobile .compact-module .row-title {{
+        font-size: 14px;
+        line-height: 1.38;
+      }}
+
+      body.view-mobile .row-image,
+      body.view-mobile .compact-module .row-image {{
+        width: 58px;
+      }}
+
+      body.view-mobile .meta-pill,
+      body.view-mobile .compact-module .meta-pill {{
+        min-height: 19px;
+        padding: 1px 6px;
+        font-size: 10px;
+      }}
+
+      body.view-mobile .gold-card-shell {{
+        padding: 16px;
+      }}
+
+      body.view-mobile .gold-summary-grid {{
+        grid-template-columns: minmax(0, 1fr) minmax(132px, 0.86fr);
+        gap: 8px;
+        margin-bottom: 14px;
+      }}
+
+      body.view-mobile .gold-headline {{
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }}
+
+      body.view-mobile .gold-updated {{
+        justify-self: start;
+      }}
+
+      body.view-mobile .gold-headline h2 {{
+        font-size: 20px;
+      }}
+
+      body.view-mobile .gold-updated {{
+        min-height: 28px;
+        padding: 4px 8px;
+        font-size: 11px;
+      }}
+
+      body.view-mobile .gold-price-row {{
+        gap: 8px;
+        align-items: flex-start;
+      }}
+
+      body.view-mobile .gold-price-value span {{
+        font-size: 34px;
+      }}
+
+      body.view-mobile .gold-price-value em {{
+        font-size: 12px;
+      }}
+
+      body.view-mobile .gold-delta {{
+        justify-self: start;
+        min-height: 30px;
+        padding: 4px 9px;
+        font-size: 12px;
+      }}
+
+      body.view-mobile .gold-metrics {{
+        grid-template-columns: 1fr;
+        gap: 7px;
+      }}
+
+      body.view-mobile .gold-metrics div {{
+        min-height: 48px;
+        padding: 8px;
+      }}
+
+      body.view-mobile .gold-metrics span {{
+        font-size: 10px;
+      }}
+
+      body.view-mobile .gold-metrics strong {{
+        font-size: 12px;
+        line-height: 1.35;
+      }}
+
+      body.view-mobile .gold-chart-grid {{
+        grid-template-columns: 1fr;
+        gap: 7px;
+      }}
+
+      body.view-mobile .gold-chart-card {{
+        padding: 8px;
+      }}
+
+      body.view-mobile .gold-chart-head {{
+        display: block;
+        margin-bottom: 6px;
+      }}
+
+      body.view-mobile .gold-chart-head span {{
+        font-size: 12px;
+      }}
+
+      body.view-mobile .gold-chart-head small {{
+        font-size: 10px;
+      }}
+
+      body.view-mobile .gold-chart-head strong {{
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+      }}
+
+      body.view-mobile .gold-trend-svg {{
+        height: 88px;
+      }}
+
+      body.view-mobile .gold-chart-empty {{
+        min-height: 88px;
+        font-size: 11px;
+      }}
+
+      body.view-mobile .gold-source-note {{
+        font-size: 10px;
+      }}
+    }}
+
+    @media (max-width: 420px) {{
+      body.view-mobile .metric-tile {{
+        padding: 8px 4px;
+      }}
+
+      body.view-mobile .metric-tile strong {{
+        font-size: 14px;
+      }}
+    }}
+
+    @media (max-width: 360px) {{
+      body.view-mobile .metric-tile {{
+        padding: 8px 3px;
+      }}
+
+      body.view-mobile .metric-tile strong {{
+        font-size: 13px;
+      }}
+    }}
+
     @media (prefers-reduced-motion: reduce) {{
       .data-row {{ transition: none; }}
       .data-row:hover {{ transform: none; }}
+      .source-chip {{ transition: none; }}
+      .source-chip:hover,
+      .source-chip:focus-visible {{ transform: none; }}
     }}
   </style>
 </head>
-<body>
+<body class="view-mobile">
   <main id="top" class="page">
     <header class="report-head">
       <div class="title-line">
         <div>
           <h1>新闻日报</h1>
           <p class="subhead">按来源分组展示最新要闻、热榜与科技新闻</p>
+        </div>
+        <div class="view-toggle" role="group" aria-label="展示模式">
+          <button type="button" data-view-mode="mobile" aria-pressed="true">移动端</button>
+          <button type="button" data-view-mode="pc" aria-pressed="false">PC端</button>
         </div>
       </div>
       <div class="metric-strip">
@@ -2316,6 +2767,24 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
     {section_grid}
     {render_project_footer()}
   </main>
+  <script>
+    (() => {{
+      const root = document.body;
+      const buttons = Array.from(document.querySelectorAll("[data-view-mode]"));
+      const setMode = (mode) => {{
+        const nextMode = mode === "pc" ? "pc" : "mobile";
+        root.classList.toggle("view-mobile", nextMode === "mobile");
+        root.classList.toggle("view-pc", nextMode === "pc");
+        buttons.forEach((button) => {{
+          button.setAttribute("aria-pressed", button.dataset.viewMode === nextMode ? "true" : "false");
+        }});
+      }};
+      buttons.forEach((button) => {{
+        button.addEventListener("click", () => setMode(button.dataset.viewMode));
+      }});
+      setMode("mobile");
+    }})();
+  </script>
   <a class="back-to-top" href="#top" aria-label="回到顶部" title="回到顶部">↑</a>
 </body>
 </html>
@@ -2358,20 +2827,24 @@ def render_gold_price_card(result: SourceResult, index: int) -> str:
     return f"""
     <section id="{source_anchor(index)}" class="source-module gold-price-module">
       <div class="gold-card-shell">
-        <div class="gold-headline">
-          <div>
-            <h2>黄金价格</h2>
+        <div class="gold-summary-grid">
+          <div class="gold-primary-panel">
+            <div class="gold-headline">
+              <div>
+                <h2>黄金价格</h2>
+              </div>
+              <div class="gold-updated">{escape(updated or "实时行情")}</div>
+            </div>
+            <div class="gold-price-row">
+              <div class="gold-price-value"><span>{price:.2f}</span><em>¥/克</em></div>
+              <div class="gold-delta {delta_class}">{delta_sign}{change:.2f} · {delta_sign}{change_percent:.2f}%</div>
+            </div>
           </div>
-          <div class="gold-updated">{escape(updated or "实时行情")}</div>
-        </div>
-        <div class="gold-price-row">
-          <div class="gold-price-value"><span>{price:.2f}</span><em>¥/克</em></div>
-          <div class="gold-delta {delta_class}">{delta_sign}{change:.2f} · {delta_sign}{change_percent:.2f}%</div>
-        </div>
-        <div class="gold-metrics">
-          <div><span>现货黄金</span><strong>{price_usd:.2f} 美元/盎司</strong></div>
-          <div><span>美元兑离岸人民币</span><strong>{fx_rate:.4f}</strong></div>
-          <div><span>换算口径</span><strong>人民币/克</strong></div>
+          <div class="gold-metrics">
+            <div><span>现货黄金</span><strong>{price_usd:.2f} 美元/盎司</strong></div>
+            <div><span>美元兑离岸人民币</span><strong>{fx_rate:.4f}</strong></div>
+            <div><span>换算口径</span><strong>人民币/克</strong></div>
+          </div>
         </div>
         <div class="gold-chart-grid">
           {chart_cards}
@@ -2501,22 +2974,15 @@ def render_news_item_row(item: NewsItem, index: int) -> str:
         title_html = f'<a class="row-title" href="{escape(item.url, quote=True)}" target="_blank" rel="noopener noreferrer">{title}</a>'
     else:
         title_html = f'<span class="row-title">{title}</span>'
-    meta_values = [value for value in [item.hot, *item.meta] if value]
-    meta_html = ""
-    if meta_values:
-        meta_html = '<div class="meta-row">' + "".join(
-            f'<span class="meta-pill {"hot" if value == item.hot else ""}">{escape(value)}</span>'
-            for value in meta_values
-        ) + "</div>"
     image_html = ""
     if item.image:
         image_html = f'<img class="row-image" src="{escape(item.image, quote=True)}" alt="" loading="lazy">'
+    row_class = "data-row has-thumb" if item.image else "data-row no-thumb"
     return f"""
-        <div class="data-row">
+        <div class="{row_class}">
           <span class="row-index">{index}</span>
           <div class="row-main">
             {title_html}
-            {meta_html}
           </div>
           {image_html}
         </div>
