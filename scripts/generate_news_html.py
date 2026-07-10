@@ -33,6 +33,11 @@ DEFAULT_RETRIES = 2
 DEFAULT_SCREENSHOT_WIDTH = 1200
 DEFAULT_SCREENSHOT_HEIGHT = 60000
 DEFAULT_SCREENSHOT_TIMEOUT = 60
+DESKTOP_VIEWPORT_WIDTH = 1200
+PROJECT_GITHUB_URL = "https://github.com/guliacer/news-html-digest"
+PROJECT_GITHUB_LABEL = "github.com/guliacer/news-html-digest"
+SCREENSHOT_PREFERENCE_KEY = "screenshot_after_html"
+PREFERENCE_PATH_ENV = "NEWS_HTML_DIGEST_PREFERENCES"
 
 
 @dataclass
@@ -63,6 +68,58 @@ class FetchError(RuntimeError):
 
 class ParseError(RuntimeError):
     pass
+
+
+def render_project_footer() -> str:
+    return (
+        '<footer class="site-footer">'
+        'GitHub：'
+        f'<a href="{PROJECT_GITHUB_URL}" target="_blank" rel="noopener noreferrer">'
+        f"{PROJECT_GITHUB_LABEL}</a>"
+        '<span> · 欢迎大家使用</span>'
+        "</footer>"
+    )
+
+
+def preference_path() -> Path:
+    override = clean_text(os.environ.get(PREFERENCE_PATH_ENV))
+    if override:
+        return Path(override).expanduser()
+    codex_home = clean_text(os.environ.get("CODEX_HOME"))
+    root = Path(codex_home).expanduser() if codex_home else Path.home() / ".codex"
+    return root / "state" / "news-html-digest" / "preferences.json"
+
+
+def read_preferences() -> dict[str, Any]:
+    path = preference_path()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def write_preferences(values: dict[str, Any]) -> None:
+    path = preference_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = read_preferences()
+    payload.update(values)
+    temp_path = path.with_suffix(path.suffix + ".tmp")
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp_path.replace(path)
+
+
+def read_screenshot_preference() -> bool | None:
+    value = read_preferences().get(SCREENSHOT_PREFERENCE_KEY)
+    return value if isinstance(value, bool) else None
+
+
+def print_preferences() -> None:
+    payload = {
+        "path": str(preference_path()),
+        SCREENSHOT_PREFERENCE_KEY: read_screenshot_preference(),
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def clean_text(value: Any, max_length: int | None = None) -> str:
@@ -1254,7 +1311,7 @@ def render_html(results: list[SourceResult], generated_at: datetime) -> str:
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width={DESKTOP_VIEWPORT_WIDTH}">
   <title>新闻日报 - {escape(generated_display)}</title>
   <style>
     :root {{
@@ -1277,9 +1334,10 @@ def render_html(results: list[SourceResult], generated_at: datetime) -> str:
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
       line-height: 1.6;
+      min-width: 1220px;
     }}
     .page {{
-      max-width: 1180px;
+      width: 1180px;
       margin: 0 auto;
       padding: 32px 20px 48px;
     }}
@@ -1439,15 +1497,26 @@ def render_html(results: list[SourceResult], generated_at: datetime) -> str:
       border: 1px solid #ffd0cb;
       overflow-wrap: anywhere;
     }}
-    footer {{
+    .site-footer {{
       color: var(--muted);
       font-size: 13px;
       margin-top: 24px;
       text-align: center;
     }}
+    .site-footer a {{
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(102, 112, 133, 0.28);
+    }}
+    .site-footer a:hover,
+    .site-footer a:focus-visible {{
+      color: var(--accent);
+      border-bottom-color: currentColor;
+      outline: none;
+    }}
     .back-to-top {{
       position: fixed;
-      right: 18px;
+      right: max(24px, calc((100vw - 1180px) / 2 - 58px));
       bottom: 18px;
       z-index: 20;
       display: inline-flex;
@@ -1469,14 +1538,6 @@ def render_html(results: list[SourceResult], generated_at: datetime) -> str:
       border-color: var(--accent);
       outline: none;
     }}
-    @media (max-width: 720px) {{
-      .page {{ padding: 24px 12px 36px; }}
-      h1 {{ font-size: 28px; }}
-      .source-head {{ grid-template-columns: 1fr; }}
-      .item {{ grid-template-columns: 1fr; }}
-      .thumb {{ width: 100%; max-height: 220px; }}
-      .back-to-top {{ right: 12px; bottom: 12px; width: 38px; height: 38px; }}
-    }}
   </style>
 </head>
 <body>
@@ -1489,7 +1550,7 @@ def render_html(results: list[SourceResult], generated_at: datetime) -> str:
       </div>
     </header>
     {sections}
-    <footer>由 Codex skill news-html-digest 生成</footer>
+    {render_project_footer()}
   </main>
   <a class="back-to-top" href="#top" aria-label="回到顶部" title="回到顶部">↑</a>
 </body>
@@ -1611,7 +1672,7 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width={DESKTOP_VIEWPORT_WIDTH}">
   <title>新闻日报 - {escape(generated_display)}</title>
   <style>
     :root {{
@@ -1653,10 +1714,11 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       color: var(--text);
       font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
       line-height: 1.6;
+      min-width: {DESKTOP_VIEWPORT_WIDTH}px;
     }}
 
     .page {{
-      width: min(var(--page-max), calc(100vw - 32px));
+      width: var(--page-max);
       margin: 0 auto;
       padding: 28px 0 56px;
     }}
@@ -2181,16 +2243,29 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       overflow-wrap: anywhere;
     }}
 
-    footer {{
+    .site-footer {{
       color: var(--muted);
       font-size: 13px;
       text-align: center;
       margin-top: 24px;
     }}
 
+    .site-footer a {{
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(101, 112, 131, 0.28);
+    }}
+
+    .site-footer a:hover,
+    .site-footer a:focus-visible {{
+      color: var(--blue-deep);
+      border-bottom-color: currentColor;
+      outline: none;
+    }}
+
     .back-to-top {{
       position: fixed;
-      right: 18px;
+      right: max(24px, calc((100vw - var(--page-max)) / 2 - 58px));
       bottom: 18px;
       z-index: 20;
       display: inline-flex;
@@ -2213,35 +2288,6 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
     .back-to-top:focus-visible {{
       border-color: var(--blue);
       outline: none;
-    }}
-
-    @media (max-width: 860px) {{
-      .title-line,
-      .module-head {{ grid-template-columns: 1fr; }}
-      .metric-strip {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-      .gold-headline,
-      .gold-price-row {{ grid-template-columns: 1fr; }}
-      .gold-updated,
-      .gold-delta {{ justify-self: start; }}
-      .gold-chart-grid {{ grid-template-columns: 1fr; }}
-    }}
-
-    @media (max-width: 560px) {{
-      .page {{ width: min(100vw - 20px, var(--page-max)); padding-top: 16px; }}
-      .report-head {{ padding: 16px; }}
-      h1 {{ font-size: 28px; }}
-      .metric-strip {{ grid-template-columns: 1fr; }}
-      .gold-card-shell {{ padding: 18px; }}
-      .gold-price-value span {{ font-size: 44px; }}
-      .gold-metrics {{ grid-template-columns: 1fr; }}
-      .compact-module .interface-data {{ grid-template-columns: 1fr; }}
-      .data-row {{ grid-template-columns: 30px minmax(0, 1fr); }}
-      .compact-module .data-row {{ grid-template-columns: 30px minmax(0, 1fr); }}
-      .row-image {{ grid-column: 2; width: 100%; max-height: 220px; }}
-      .compact-module .row-image {{ grid-column: 2; width: 100%; max-height: 150px; }}
-      .module-head,
-      .interface-data {{ padding-left: 14px; padding-right: 14px; }}
-      .back-to-top {{ right: 12px; bottom: 12px; width: 38px; height: 38px; }}
     }}
 
     @media (prefers-reduced-motion: reduce) {{
@@ -2268,7 +2314,7 @@ def render_news_card_html(results: list[SourceResult], generated_at: datetime) -
       {source_overview}
     </header>
     {section_grid}
-    <footer>由 Codex skill news-html-digest 生成</footer>
+    {render_project_footer()}
   </main>
   <a class="back-to-top" href="#top" aria-label="回到顶部" title="回到顶部">↑</a>
 </body>
@@ -2632,12 +2678,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--retries", type=non_negative_int, default=DEFAULT_RETRIES, help="Retries per source after the first attempt.")
     parser.add_argument("--paper-node-id", default="25950", help="ThePaper nodeId for nodeCont/getByNodeIdPortal.")
     screenshot_group = parser.add_mutually_exclusive_group()
-    screenshot_group.add_argument("--screenshot", dest="screenshot", action="store_true", default=True, help="Capture a long PNG screenshot next to the generated HTML file.")
+    screenshot_group.add_argument("--screenshot", dest="screenshot", action="store_true", default=None, help="Capture a long PNG screenshot next to the generated HTML file for this run.")
     screenshot_group.add_argument("--no-screenshot", dest="screenshot", action="store_false", help="Generate only the HTML file.")
+    parser.add_argument("--remember-screenshot-preference", type=screenshot_preference, metavar="{yes,no}", help="Persist the default screenshot choice for future runs.")
+    parser.add_argument("--print-preferences", action="store_true", help="Print saved preferences and exit without generating a report.")
     parser.add_argument("--screenshot-width", type=positive_int, default=DEFAULT_SCREENSHOT_WIDTH, help="Screenshot viewport width in pixels.")
     parser.add_argument("--screenshot-height", type=positive_int, default=DEFAULT_SCREENSHOT_HEIGHT, help="Maximum screenshot viewport height in pixels.")
     parser.add_argument("--screenshot-timeout", type=positive_int, default=DEFAULT_SCREENSHOT_TIMEOUT, help="Seconds to wait for browser screenshot capture.")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    apply_screenshot_preference(args)
+    return args
 
 
 def positive_int(value: str) -> int:
@@ -2654,6 +2704,27 @@ def source_limit(value: str) -> int:
     return parsed
 
 
+def screenshot_preference(value: str) -> bool:
+    normalized = clean_text(value).lower()
+    truthy = {"1", "true", "yes", "y", "on", "需要", "要", "生成"}
+    falsy = {"0", "false", "no", "n", "off", "不需要", "不要", "不生成"}
+    if normalized in truthy:
+        return True
+    if normalized in falsy:
+        return False
+    raise argparse.ArgumentTypeError("must be yes or no")
+
+
+def apply_screenshot_preference(args: argparse.Namespace) -> None:
+    if args.remember_screenshot_preference is not None:
+        write_preferences({SCREENSHOT_PREFERENCE_KEY: args.remember_screenshot_preference})
+        if args.screenshot is None:
+            args.screenshot = args.remember_screenshot_preference
+    if args.screenshot is None:
+        saved_preference = read_screenshot_preference()
+        args.screenshot = saved_preference if saved_preference is not None else True
+
+
 def non_negative_int(value: str) -> int:
     parsed = int(value)
     if parsed < 0:
@@ -2663,6 +2734,9 @@ def non_negative_int(value: str) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
+    if args.print_preferences:
+        print_preferences()
+        return 0
     output_path, screenshot_path, screenshot_error, results = generate_report(args)
     print(f"OUTPUT: {output_path}")
     if screenshot_path:
